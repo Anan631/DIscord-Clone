@@ -1,8 +1,25 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import Channel from './models/Channel.js';
 
 dotenv.config();
+
+const DEFAULT_CHANNELS = [
+  { name: 'general', description: 'General discussion for everyone' },
+  { name: 'random', description: 'Off-topic and fun conversations' },
+  { name: 'help', description: 'Ask questions and get help' },
+];
+
+async function seedChannels() {
+  for (const channel of DEFAULT_CHANNELS) {
+    await Channel.findOneAndUpdate(
+      { name: channel.name },
+      { $setOnInsert: channel },
+      { upsert: true, new: true }
+    );
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,6 +38,8 @@ async function start() {
       serverSelectionTimeoutMS: 10000,
     });
     console.log('Connected to MongoDB');
+    await seedChannels();
+    console.log('Default channels ready');
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
