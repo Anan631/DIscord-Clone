@@ -31,6 +31,12 @@ router.post('/', async (req, res) => {
     }
 
     const channel = await Channel.create({ name, description });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('channel_created', { channel });
+    }
+
     res.status(201).json({ channel });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to create channel' });

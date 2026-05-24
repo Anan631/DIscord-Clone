@@ -13,6 +13,11 @@ export default function Sidebar({
   const [newDesc, setNewDesc] = useState('');
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredChannels = channels.filter((channel) =>
+    channel.name.toLowerCase().includes(search.toLowerCase().trim())
+  );
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -43,6 +48,15 @@ export default function Sidebar({
         >
           +
         </button>
+      </div>
+
+      <div className="channel-search">
+        <input
+          type="text"
+          placeholder="Search channels..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {showCreate && (
@@ -77,7 +91,10 @@ export default function Sidebar({
       )}
 
       <nav className="channel-list">
-        {channels.map((channel) => (
+        {filteredChannels.length === 0 && search && (
+          <p className="channel-list-empty">No channels match &quot;{search}&quot;</p>
+        )}
+        {filteredChannels.map((channel) => (
           <button
             key={channel._id}
             type="button"

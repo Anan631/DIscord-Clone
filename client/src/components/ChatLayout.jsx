@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getChannels, createChannel } from '../api';
+import { getSocket } from '../socket';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
 
@@ -25,6 +26,21 @@ export default function ChatLayout() {
 
   useEffect(() => {
     loadChannels();
+  }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const onChannelCreated = ({ channel }) => {
+      setChannels((prev) => {
+        if (prev.some((c) => c._id === channel._id)) return prev;
+        return [...prev, channel].sort((a, b) => a.name.localeCompare(b.name));
+      });
+    };
+
+    socket.on('channel_created', onChannelCreated);
+    return () => socket.off('channel_created', onChannelCreated);
   }, []);
 
   const handleCreateChannel = async (name, description) => {

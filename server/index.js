@@ -17,6 +17,13 @@ const DEFAULT_CHANNELS = [
   { name: 'general', description: 'General discussion for everyone' },
   { name: 'random', description: 'Off-topic and fun conversations' },
   { name: 'help', description: 'Ask questions and get help' },
+  { name: 'announcements', description: 'News and updates' },
+  { name: 'gaming', description: 'Talk about games' },
+  { name: 'music', description: 'Share and discuss music' },
+  { name: 'memes', description: 'Memes and humor' },
+  { name: 'study', description: 'Study groups and homework help' },
+  { name: 'tech', description: 'Technology and programming' },
+  { name: 'off-topic', description: 'Anything goes' },
 ];
 
 async function seedChannels() {
@@ -57,6 +64,8 @@ app.get('/api/health', (_, res) => {
     db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
 });
+
+app.set('io', io);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/channels', channelRoutes);
