@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getChannels, createChannel } from '../api';
+import { getChannels, createChannel, joinChannel, leaveChannel } from '../api';
 import { getSocket } from '../socket';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
@@ -16,7 +16,9 @@ export default function ChatLayout() {
     try {
       const { data } = await getChannels();
       setChannels(data.channels);
-      setActiveChannel((current) => current || data.channels[0] || null);
+      // Set active channel to first joined channel, or null if no joined channels
+      const firstJoinedChannel = data.channels.find((c) => c.joined);
+      setActiveChannel((current) => current || firstJoinedChannel || null);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load channels');
     } finally {
@@ -35,7 +37,9 @@ export default function ChatLayout() {
     const onChannelCreated = ({ channel }) => {
       setChannels((prev) => {
         if (prev.some((c) => c._id === channel._id)) return prev;
-        return [...prev, channel].sort((a, b) => a.name.localeCompare(b.name));
+        return [...prev, { ...channel, joined: false }].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
       });
     };
 
@@ -48,7 +52,42 @@ export default function ChatLayout() {
     setChannels((prev) =>
       [...prev, data.channel].sort((a, b) => a.name.localeCompare(b.name))
     );
+    // Auto-select the newly created channel (user is auto-joined)
     setActiveChannel(data.channel);
+  };
+
+  const handleJoinChannel = async (channelId) => {
+    try {
+      await joinChannel(channelId);
+      setChannels((prev) =>
+        prev.map((c) => (c._id === channelId ? { ...c, joined: true } : c))
+      );
+      // Automatically switch to the newly joined channel
+      const joinedChannel = channels.find((c) => c._id === channelId);
+      if (joinedChannel) {
+        setActiveChannel({ ...joinedChannel, joined: true });
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to join channel');
+    }
+  };
+
+  const handleLeaveChannel = async (channelId) => {
+    try {
+      await leaveChannel(channelId);
+      setChannels((prev) =>
+        prev.map((c) => (c._id === channelId ? { ...c, joined: false } : c))
+      );
+      // If leaving the active channel, switch to another joined channel
+      if (activeChannel?._id === channelId) {
+        const firstJoinedChannel = channels.find(
+          (c) => c._id !== channelId && c.joined
+        );
+        setActiveChannel(firstJoinedChannel || null);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to leave channel');
+    }
   };
 
   if (loading) {
@@ -67,6 +106,8 @@ export default function ChatLayout() {
         activeChannel={activeChannel}
         onSelectChannel={setActiveChannel}
         onCreateChannel={handleCreateChannel}
+        onJoinChannel={handleJoinChannel}
+        onLeaveChannel={handleLeaveChannel}
         user={user}
         onLogout={logout}
       />

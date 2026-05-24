@@ -5,6 +5,8 @@ export default function Sidebar({
   activeChannel,
   onSelectChannel,
   onCreateChannel,
+  onJoinChannel,
+  onLeaveChannel,
   user,
   onLogout,
 }) {
@@ -14,8 +16,17 @@ export default function Sidebar({
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState('');
+  const [joiningId, setJoiningId] = useState(null);
+  const [leavingId, setLeavingId] = useState(null);
 
-  const filteredChannels = channels.filter((channel) =>
+  const joinedChannels = channels.filter((c) => c.joined);
+  const availableChannels = channels.filter((c) => !c.joined);
+
+  const filteredJoined = joinedChannels.filter((channel) =>
+    channel.name.toLowerCase().includes(search.toLowerCase().trim())
+  );
+
+  const filteredAvailable = availableChannels.filter((channel) =>
     channel.name.toLowerCase().includes(search.toLowerCase().trim())
   );
 
@@ -33,6 +44,26 @@ export default function Sidebar({
       setError(err.response?.data?.error || 'Failed to create channel');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleJoin = async (e, channelId) => {
+    e.stopPropagation();
+    setJoiningId(channelId);
+    try {
+      await onJoinChannel(channelId);
+    } finally {
+      setJoiningId(null);
+    }
+  };
+
+  const handleLeave = async (e, channelId) => {
+    e.stopPropagation();
+    setLeavingId(channelId);
+    try {
+      await onLeaveChannel(channelId);
+    } finally {
+      setLeavingId(null);
     }
   };
 
@@ -91,20 +122,66 @@ export default function Sidebar({
       )}
 
       <nav className="channel-list">
-        {filteredChannels.length === 0 && search && (
+        {filteredJoined.length === 0 && filteredAvailable.length === 0 && search && (
           <p className="channel-list-empty">No channels match &quot;{search}&quot;</p>
         )}
-        {filteredChannels.map((channel) => (
-          <button
-            key={channel._id}
-            type="button"
-            className={`channel-item ${activeChannel?._id === channel._id ? 'active' : ''}`}
-            onClick={() => onSelectChannel(channel)}
-          >
-            <span className="channel-hash">#</span>
-            {channel.name}
-          </button>
-        ))}
+
+        {filteredJoined.length > 0 && (
+          <>
+            <div className="channel-group-label">Joined</div>
+            {filteredJoined.map((channel) => (
+              <div
+                key={channel._id}
+                className={`channel-item-wrapper ${activeChannel?._id === channel._id ? 'active' : ''}`}
+              >
+                <button
+                  type="button"
+                  className="channel-item"
+                  onClick={() => onSelectChannel(channel)}
+                >
+                  <span className="channel-hash">#</span>
+                  {channel.name}
+                </button>
+                <button
+                  type="button"
+                  className="btn-channel-action"
+                  onClick={(e) => handleLeave(e, channel._id)}
+                  disabled={leavingId === channel._id}
+                  title="Leave channel"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {filteredAvailable.length > 0 && (
+          <>
+            <div className="channel-group-label">Browse</div>
+            {filteredAvailable.map((channel) => (
+              <div key={channel._id} className="channel-item-wrapper">
+                <button
+                  type="button"
+                  className="channel-item channel-unavailable"
+                  disabled
+                >
+                  <span className="channel-hash">#</span>
+                  {channel.name}
+                </button>
+                <button
+                  type="button"
+                  className="btn-channel-action btn-join"
+                  onClick={(e) => handleJoin(e, channel._id)}
+                  disabled={joiningId === channel._id}
+                  title="Join channel"
+                >
+                  {joiningId === channel._id ? '...' : '+'}
+                </button>
+              </div>
+            ))}
+          </>
+        )}
       </nav>
 
       <div className="sidebar-footer">

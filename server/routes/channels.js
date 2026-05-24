@@ -10,7 +10,14 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
   try {
     const channels = await Channel.find().sort({ name: 1 });
-    res.json({ channels });
+    const userId = req.user._id;
+    
+    const channelsWithStatus = channels.map((channel) => ({
+      ...channel.toObject(),
+      joined: req.user.joinedChannels.includes(channel._id),
+    }));
+    
+    res.json({ channels: channelsWithStatus });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to fetch channels' });
   }
@@ -32,12 +39,16 @@ router.post('/', async (req, res) => {
 
     const channel = await Channel.create({ name, description });
 
+    // Auto-join the creator
+    req.user.joinedChannels.push(channel._id);
+    await req.user.save();
+
     const io = req.app.get('io');
     if (io) {
       io.emit('channel_created', { channel });
     }
 
-    res.status(201).json({ channel });
+    res.status(201).json({ channel: { ...channel.toObject(), joined: true } });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to create channel' });
   }
@@ -56,6 +67,53 @@ router.get('/:channelId/messages', async (req, res) => {
     res.json({ messages: messages.reverse() });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to fetch messages' });
+  }
+});
+
+router.post('/:channelId/join', async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const userId = req.user._id;
+
+    const channel = await Channel.findById(channelId);
+    if (!channel) {
+      return res.status(404).json({ error: 'Channel not found' });
+    }
+
+    if (req.user.joinedChannels.includes(channelId)) {
+      return res.status(400).json({ error: 'Already joined this channel' });
+    }
+
+    req.user.joinedChannels.push(channelId);
+    await req.user.save();
+
+    res.json({ message: 'Joined channel successfully', channel });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to join channel' });
+  }
+});
+
+router.post('/:channelId/leave', async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const userId = req.user._id;
+
+    const channel = await Channel.findById(channelId);
+    if (!channel) {
+      return res.status(404).json({ error: 'Channel not found' });
+    }
+
+    const index = req.user.joinedChannels.indexOf(channelId);
+    if (index === -1) {
+      return res.status(400).json({ error: 'Not a member of this channel' });
+    }
+
+    req.user.joinedChannels.splice(index, 1);
+    await req.user.save();
+
+    res.json({ message: 'Left channel successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to leave channel' });
   }
 });
 

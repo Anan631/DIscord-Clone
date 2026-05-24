@@ -611,6 +611,83 @@ input {
   border-radius: 4px;
 }
 
+.channel-group-label {
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.channel-item-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+
+.channel-item-wrapper.active {
+  background: var(--bg-hover);
+}
+
+.channel-item-wrapper .channel-item {
+  flex: 1;
+  padding: 8px 10px;
+  margin: 0;
+}
+
+.channel-item.channel-unavailable {
+  cursor: default;
+  color: var(--text-muted);
+}
+
+.channel-item.channel-unavailable:hover {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.btn-channel-action {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.btn-channel-action:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-channel-action.btn-join {
+  color: var(--accent);
+}
+
+.btn-channel-action.btn-join:hover:not(:disabled) {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-channel-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 @media (max-width: 640px) {
   .sidebar {
     width: 200px;

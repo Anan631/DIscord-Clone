@@ -23,6 +23,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
+    joinedChannels: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'Channel',
+      default: [],
+    },
   },
   { timestamps: true }
 );

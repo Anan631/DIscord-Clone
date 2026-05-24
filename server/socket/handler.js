@@ -1,5 +1,6 @@
 import Message from '../models/Message.js';
 import Channel from '../models/Channel.js';
+import User from '../models/User.js';
 
 export const setupSocket = (io) => {
   io.on('connection', (socket) => {
@@ -10,6 +11,13 @@ export const setupSocket = (io) => {
         const channel = await Channel.findById(channelId);
         if (!channel) {
           socket.emit('error', { message: 'Channel not found' });
+          return;
+        }
+
+        // Check if user is a member of this channel
+        const user = await User.findById(userId);
+        if (!user.joinedChannels.includes(channelId)) {
+          socket.emit('error', { message: 'You are not a member of this channel' });
           return;
         }
 
@@ -43,6 +51,13 @@ export const setupSocket = (io) => {
         const channel = await Channel.findById(channelId);
         if (!channel) {
           socket.emit('error', { message: 'Channel not found' });
+          return;
+        }
+
+        // Check if user is a member of this channel
+        const user = await User.findById(userId);
+        if (!user.joinedChannels.includes(channelId)) {
+          socket.emit('error', { message: 'You are not a member of this channel' });
           return;
         }
 

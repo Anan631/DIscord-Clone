@@ -18,5 +18,7 @@ export const getMe = () => api.get('/auth/me');
 export const getChannels = () => api.get('/channels');
 export const createChannel = (data) => api.post('/channels', data);
 export const getMessages = (channelId) => api.get(`/channels/${channelId}/messages`);
+export const joinChannel = (channelId) => api.post(`/channels/${channelId}/join`);
+export const leaveChannel = (channelId) => api.post(`/channels/${channelId}/leave`);
 
 export default api;
